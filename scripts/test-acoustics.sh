@@ -25,6 +25,10 @@ rustfmt --edition 2024 --check "$mod"/mixins/horizon_acoustics/*.rs
 git init -q "$scratch/horizon"
 git -C "$scratch/horizon" fetch --depth 1 https://github.com/horizon-rust/horizon.git "$horizon"
 git -C "$scratch/horizon" checkout -q --detach FETCH_HEAD
+# Git checks out the documentation alias as a symlink, which mixins cannot stage.
+if [[ -L "$scratch/horizon/CLAUDE.md" ]]; then
+    rm -- "$scratch/horizon/CLAUDE.md"
+fi
 git -C "$scratch/horizon" apply "$mod/audio-host.patch"
 
 cargo install --locked --root "$scratch/tools" --git https://github.com/horizon-rust/horizon-mixins --rev "$mixins" horizon-mixins-cli
