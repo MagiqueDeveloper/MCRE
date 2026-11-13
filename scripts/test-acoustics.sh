@@ -5,6 +5,8 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 mod="$root/mods/horizon-acoustics"
 scratch="$(mktemp -d)"
 trap 'rm -rf -- "$scratch"' EXIT
+# On macOS, TMPDIR can start with /var, a symlink the staging tool rejects.
+scratch="$(cd "$scratch" && pwd -P)"
 
 read -r horizon mixins rust < <(python3 - "$mod/mod.toml" <<'PY'
 import sys
