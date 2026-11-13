@@ -1,0 +1,21 @@
+name: Mod port proposal
+description: Suggest a mod or feature to bring to Horizon.
+labels: [port-request]
+body:
+  - type: input
+    id: mod
+    attributes:
+      label: Mod name and upstream link
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: What should the first version do?
+      description: Describe the features you use most and how to tell whether they work in Horizon.
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: Upstream license or permissions

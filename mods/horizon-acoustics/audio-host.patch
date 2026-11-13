@@ -1,0 +1,80 @@
+--- a/crates/horizon-client-render/src/audio.rs
++++ b/crates/horizon-client-render/src/audio.rs
+@@ -66,6 +66,7 @@
+     /// Per-source gain/pan/step cache for one buffer, reused across callbacks.
+     voices: Vec<(ChannelId, [f32; 3], f64)>,
+     limiter_peak: f32,
++    acoustics_effects: Option<Box<acoustics::Effects>>,
+     /// The output device the stream was opened on (`Library.currentDeviceName`).
+     #[cfg(feature = "audio")]
+     device_name: String,
+@@ -593,6 +594,10 @@
+ #[cfg_attr(not(feature = "audio"), allow(dead_code))]
+ fn mix(mixer: &mut Mixer, data: &mut [f32], channels: usize, rate: u32) {
+     data.fill(0.0);
++    let effects = &mut mixer.acoustics_effects;
++    if let Some(effects) = effects {
++        effects.begin(data.len() / channels, rate);
++    }
+     // The camera's forward and up vectors (`Camera.forwardVector`/`upVector`)
+     // and OpenAL's right = forward x up.
+     let basis = |yaw: f32, pitch: f32| {
+@@ -710,8 +715,13 @@
+             continue;
+         };
+         let source_channels = source_channels as usize;
++        let mut voice = if source_channels == 1 && !c.relative && c.linear.is_some() && gain > 0.0 {
++            effects.as_mut().and_then(|effects| effects.voice(id))
++        } else {
++            None
++        };
+         let frames = samples.len() / source_channels;
+-        for frame in data.chunks_mut(channels) {
++        for (index, frame) in data.chunks_mut(channels).enumerate() {
+             let mut i = c.position as usize;
+             if i + 1 >= frames {
+                 if c.looping && frames > 1 {
+@@ -734,6 +744,13 @@
+                 }
+             } else {
+                 let s = samples[i] * (1.0 - t) + samples[i + 1] * t;
++                let s = if let Some((voice, send)) = &mut voice {
++                    let sample = voice.sample(s);
++                    send[index] += sample * gain;
++                    sample
++                } else {
++                    s
++                };
+                 if channels >= 2 {
+                     frame[0] += s * left;
+                     frame[1] += s * right;
+@@ -746,6 +763,9 @@
+         }
+     }
+     mixer.voices = voices;
++    if let Some(effects) = effects {
++        effects.reverb(data, channels);
++    }
+     // Limit the whole buffer together, preserving waveform and stereo balance
+     // instead of flattening each overloaded sample; release over 200 ms
+     // (OpenAL Soft's output limiter, `ALC_OUTPUT_LIMITER_SOFT`, releases
+@@ -1181,6 +1201,9 @@
+     /// World identity for this player's sources and camera. Existing channels keep their world.
+     pub fn set_world(&mut self, world: &str) {
+         if let Ok(mut mixer) = self.backend.mixer.lock() {
++            if self.backend.owner == 0 {
++                mixer.acoustics_effects = None;
++            }
+             let id = mixer.world_id(world);
+             self.backend.world = id;
+             mixer.worlds.insert(self.backend.owner, id);
+--- a/crates/horizon-client/src/game.rs
++++ b/crates/horizon-client/src/game.rs
+@@ -15711,6 +15711,7 @@
+         pr.lap("pr_camera");
+         self.audio
+             .set_listener([camera.x, camera.y, camera.z], view_yaw, view_pitch);
++        acoustics::update(self);
+         pr.lap("pr_listener");
+         let block = [
+             camera.x.floor() as i32,

@@ -1,0 +1,13 @@
+.DS_Store
+target/
+dist/
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log
+*.jar
+*.hnmod
+*.zip
+horizon-client
+horizon-client.exe

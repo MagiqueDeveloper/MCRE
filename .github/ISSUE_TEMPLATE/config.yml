@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and discussion
+    url: https://github.com/MagiqueDeveloper/MCRE/discussions
+    about: Ask about installation, mod development, or early port ideas.
+  - name: Private security report
+    url: https://github.com/MagiqueDeveloper/MCRE/security/advisories/new
+    about: Report a suspected vulnerability privately.

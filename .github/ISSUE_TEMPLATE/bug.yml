@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible problem with an MCRE mod.
+labels: [bug]
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Mod version, Horizon build, and operating system
+      placeholder: Horizon Acoustics 0.1.0, nightly-2026-11-08-fdc87ae, macOS Apple Silicon
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include what you expected, what happened, and any relevant settings or other mods.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Remove account details, tokens, private server addresses, and local paths before posting.
